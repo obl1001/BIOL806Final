@@ -1,0 +1,266 @@
+---
+title: "Final Assignment Analysis: A multi-year time series of phytoplankton community structure at various marine laboratories at University of New Hampshire"
+author: "Olivia Lucia"
+date: "December 6, 2024"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+```
+
+## Introduction
+
+Phytoplankton, a diverse group of photosynthetic microorganisms, are the foundation of aquatic ecosystems. Their role in global carbon sequestration and nutrient cycling underscores their ecological importance, as they support aquatic food webs and regulate biogeochemical processes. Chlorophyll concentration, a proxy for phytoplankton biomass and productivity, is a critical indicator of their abundance and health. However, the variability in chlorophyll concentration across different microorganism types, as well as the factors driving temporal fluctuations in phytoplankton density, remains less understood.
+
+Phytoplankton community composition varies with environmental conditions such as light, temperature, and nutrient availability. Previous research has highlighted how these factors influence groups like picoeukaryotes, nanoeukaryotes, and cyanobacteria, each characterized by distinct ecological niches and physiological traits. Temporal trends in phytoplankton abundance, shaped by seasonal and interannual changes, have significant implications for ecosystem stability and resilience to environmental changes. By examining these relationships, this study aims to deepen our understanding of the interactions between phytoplankton types, chlorophyll levels, and temporal dynamics.
+
+This study addresses two key research questions: 1) Is chlorophyll concentration associated with specific types of microorganisms? 2) How do the densities of different phytoplankton groups vary over a four-year period?
+
+
+```{r pulling data, include=FALSE}
+library(readr)
+phyto_data <- read_csv("OL-weeklyphyto-data.csv")
+```
+
+
+```{r data cleaning, include=FALSE}
+#Mutating columns 
+phyto_data <- phyto_data %>%
+  mutate(
+    `Chlorophyll (ug/L)` = as.numeric(`Chlorophyll (ug/L)`),
+    `Picoeukaryotes (cells/ml)` = as.numeric(`Picoeukaryotes (cells/ml)`),
+    `Nanoeukaryotes (cells/mL)` = as.numeric(`Nanoeukaryotes (cells/mL)`),
+    `Cyanobacteria (cells/mL)` = as.numeric(`Cyanobacteria (cells/mL)`)) 
+summary(phyto_data)
+
+#Filtering
+phyto_data_clean <- phyto_data %>%
+  filter(!is.na(`Chlorophyll (ug/L)`), !is.na(`Picoeukaryotes (cells/ml)`))
+
+#Is chlorophyll concentration related to the type of micro-organism?
+
+#Adding Date Column
+phyto_data_clean <- phyto_data_clean %>%
+  mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%m-%d"))
+```
+
+## Methods
+
+The data set analyzed in this study comprises weekly samples of chlorophyll concentration and densities of various phytoplankton types, collected from aquatic environments at Hampton Beach, Coastal Marine Laboratory at Jaffrey Point, and Jackson Estuary Marine Laboratory at Adam’s Point. Sampling occurred at regular intervals to capture seasonal and temporal variations in phytoplankton communities. Key variables include chlorophyll concentration (µg/L), representing phytoplankton biomass, and densities of microorganism types such as picoeukaryotes, nanoeukaryotes, and cyanobacteria. Temporal variables (month and year) were included to enable the analysis of seasonal and long-term trends.
+
+All data wrangling and analyses were conducted in R v. 4.4.1 (R Core Team, 2020). Initial data cleaning addressed inconsistencies, missing values, and outliers to ensure data quality. The data set was reshaped using the pivot_longer() function, converting wide-format phytoplankton density columns into a long format for streamlined comparisons across microorganism types.
+
+To investigate the relationship between chlorophyll concentration and microorganism types, exploratory data analysis included visualizations such as box plots (chlorophyll concentration on the y-axis and microorganism type on the x-axis) and scatter plots with jitter to capture variability within groups. These visualizations revealed patterns and associations between chlorophyll levels and microorganism categories.
+
+Temporal variations in phytoplankton density were analyzed by aggregating data by month and year. The average density of each microorganism group was calculated for each time period. Seasonal trends were examined using line plots for each phytoplankton group, with the x-axis representing years and the y-axis depicting microbe density. These plots provided insights into recurrent seasonal peaks or troughs and long-term density fluctuations.
+
+## Results and Analysis
+
+```{r, echo=FALSE, fig.cap= "Figure 1: Boxplot comparing chlorophyll concentration across different microorganism types (Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes) measured in cells/mL. Points outside the boxplot represent outliers."}
+data_long <- phyto_data_clean %>%
+  select(Date, `Chlorophyll (ug/L)`, `Picoeukaryotes (cells/ml)`, `Nanoeukaryotes (cells/mL)`, `Cyanobacteria (cells/mL)`, Location) %>%
+  pivot_longer(
+    cols = c(`Picoeukaryotes (cells/ml)`, `Nanoeukaryotes (cells/mL)`, `Cyanobacteria (cells/mL)`), 
+    names_to = "Micro_organism_type", 
+    values_to = "Concentration"
+  )
+#create the boxplot
+ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, fill = Micro_organism_type)) +
+  geom_boxplot() +
+  labs(title = "Chlorophyll Concentration by Microorganism Type",
+       x = "Microorganism Type",
+       y = "Chlorophyll (ug/L)", fill = "Microorganism Type") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
+                               "Nanoeukaryotes (cells/mL)" = "green", 
+                               "Cyanobacteria (cells/mL)" = "orange"))
+```
+
+```{r jitter, include=FALSE, fig.cap="Figure 2: Boxplot illustrating chlorophyll concentration (µg/L) for different microorganism types: Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes, measured in cells/mL. Each point represents an individual measurement, highlighting the potential variability and outliers in chlorophyll concentration among the three microorganism groups."}
+# Scatter plot with linear trend lines for each microorganism type
+ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, color = Micro_organism_type)) +
+  geom_jitter() +  # Adds jitter to spread points out horizontally
+  geom_boxplot() +  # Adds a boxplot overlay for distribution view
+  labs(title = "Chlorophyll Concentration by Micro-organism Type",
+       x = "Micro-organism Type", y = "Chlorophyll (ug/L)", color = "Microorganism Type") +
+  theme_minimal() +
+  scale_color_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
+                                "Nanoeukaryotes (cells/mL)" = "green", 
+                                "Cyanobacteria (cells/mL)" = "orange"))
+```
+
+*Chlorophyll Concentration Amoung Microorganisms* 
+
+Figures 1 and 2 show boxplots demonstrating the lack of heterogeneity in chlorophyll content among the three microorganism kinds. All three species of bacteria have similar, nearly equal chlorophyll levels. Picoeukaryotes had a significantly wider range of concentrations, but with occasional outliers, as shown by the jittered data points in Figure 2.
+
+```{r density, include=FALSE}
+data_long <- data_long %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"))
+library(lubridate)
+
+data_long <- data_long %>%
+  mutate(
+    Year = year(Date),
+    Month = month(Date)
+  )
+data_long <- data_long %>% 
+  mutate(
+    Month = case_when(
+      Month %in% c(1) ~ "Jan",
+      Month %in% c(2) ~ "Feb",
+      Month %in% c(3) ~ "Mar",
+      Month %in% c(4) ~ "Apr",
+      Month %in% c(5) ~ "May",
+      Month %in% c(6) ~ "Jun",
+      Month %in% c(7) ~ "Jul",
+      Month %in% c(8) ~ "Aug",
+      Month %in% c(9) ~ "Sep",
+      Month %in% c(10) ~ "Oct",
+      Month %in% c(11) ~ "Nov",
+      Month %in% c(12) ~ "Dec")) 
+
+seasonal_data <- data_long %>%
+  group_by(Year, Month,Date, Micro_organism_type) %>%
+  summarize(Average_Concentration = mean(Concentration)) 
+
+seasonal_data <- seasonal_data %>%
+  mutate(
+    Date = as.Date(Date),  # Ensure Date is in Date format
+    Year = year(Date),
+    Month = month(Date),
+    Season = case_when(
+      Month %in% c(12, 1, 2) ~ "Winter",
+      Month %in% c(3, 4, 5) ~ "Spring",
+      Month %in% c(6, 7, 8) ~ "Summer",
+      Month %in% c(9, 10, 11) ~ "Fall"
+    )
+  )
+```
+
+
+```{r line plot, echo=FALSE, fig.cap="Figure 3: Line plots showing the seasonal trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+
+ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Micro_organism_type)) +
+  geom_point() +                      
+  geom_line(aes(group = Micro_organism_type)) + # Connect points with lines
+  facet_wrap(~ Season, scales = "free_y") +   # Facet by Season
+  labs(
+    title = "Microorganism Density Over Time by Season",
+    x = "Year",
+    y = "Microorganism Density (cells/mL)",
+    color = "Microorganism Type"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+```
+
+
+```{r seasons, include=FALSE}
+#Seasonal data number 2
+seasonal_data2 <- data_long %>%
+  group_by(Year, Month,Date, `Chlorophyll (ug/L)`, Micro_organism_type, Location) %>%
+  summarize(avg_chloropyll = mean(`Chlorophyll (ug/L)`)) 
+
+seasonal_data2 <- seasonal_data2 %>%
+  mutate(
+    Date = as.Date(Date),  # Ensure Date is in Date format
+    Year = year(Date),
+    Month = month(Date),
+    Season = case_when(
+      Month %in% c(12, 1, 2) ~ "Winter",
+      Month %in% c(3, 4, 5) ~ "Spring",
+      Month %in% c(6, 7, 8) ~ "Summer",
+      Month %in% c(9, 10, 11) ~ "Fall"
+    )
+  )
+```
+
+```{r boxplot, echo=FALSE, fig.cap="Figure 4: Boxplots showing the seasonal trends in chloropyll concentration(ug/mL) over time from 2020 to 2024 for. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+ggplot(seasonal_data2, aes(x = as.factor(Year), y = avg_chloropyll)) + # Convert Year to a factor for categorical plotting
+  geom_boxplot() + # Use boxplot instead of points and lines
+  facet_wrap(~ Season, scales = "free_y") + # Facet by Season
+  labs(
+    title = "Chlorophyll Concentrations Over Time by Season",
+    x = "Year",
+    y = "Concentration (µg/mL)"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+```
+
+*Seasonal Trends in Microorganism density and chlorophyll concentration* 
+
+Seasonal line plot (Figures 3) and boxplot (Figure 4) showed unique patterns across time. Microorganism density varied seasonally, with Cyanobacteria and Picoeukaryotes peaking in the spring and summer, whereas Nanoeukaryotes remained more steady throughout the year. Chlorophyll concentrations paralleled similar patterns, indicating a possible relationship between microbe abundance and chlorophyll levels.
+
+```{r,echo=FALSE, fig.cap="Figure 5: Line plots showing the trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Month)) +
+  geom_line() +
+  facet_wrap(~Micro_organism_type, scales = "free_y") +
+  labs(title = "Variations in Phytoplankton Density by Microorganism Type Over time",
+       x = "Year",
+       y = "Average Phytoplankton Density") +
+  theme_minimal()
+```
+
+```{r,echo=FALSE, fig.cap="Figure 6: Line plots showing the trends in chlorophyll concentration (ug/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+ggplot(seasonal_data2, aes(x = Year, y = avg_chloropyll, color = Month)) +
+  geom_line() +
+  facet_wrap(~Micro_organism_type, scales = "free_y") +
+  labs(title = "Variations in Chlorophyll Concentration by Microorganism Type Over time",
+       x = "Year",
+       y = "Average Chlorophyll concentration") +
+  theme_minimal()
+```
+
+*Long-term trends by microorganism Type* 
+
+Figures 5 and 6 show trends in density and chlorophyll concentration for each microbe throughout time. Figure 5 demonstrated a lot of fluctuation in microbe density, with no pattern or association. Chlorophyll concentrations followed similar trajectories, with all three microorganisms having nearly identical chlorophyll concentration tendencies, as seen in Figures 1 and 2.
+
+```{r lm, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Figure 7: Relationship between chlorophyll concentration and picoeukaryotes density, including best fit line."}
+# Create the linear model
+lm_model <- lm(`Chlorophyll (ug/L)` ~ `Picoeukaryotes (cells/ml)`, data = phyto_data_clean)
+
+# Plot with regression line
+ggplot(phyto_data_clean, aes(x = `Picoeukaryotes (cells/ml)`, y = `Chlorophyll (ug/L)`)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Chlorophyll vs. Picoeukaryotes", x = "Picoeukaryotes (cells/ml)", y = "Chlorophyll (ug/L)")
+```
+
+*Correlation between chlorophyll and picoeukaryote density* 
+
+A linear regression analysis (Figure 7) revealed a slightly negative correlation between chlorophyll content and Picoeukaryote density. This shows that, despite their low overall density, picoeukaryotes contribute significantly to chlorophyll synthesis, maybe because to their effective photosynthetic processes. These findings highlight the variety of phytoplankton contributions to ecosystem production, as well as the relevance of seasonal and long-term dynamics in forming phytoplankton populations.
+
+## Disscussion
+This study examined the relationships between chlorophyll concentration, microorganism density, and temporal trends in three phytoplankton groups: Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes, from 2020 to 2024. The findings provide insights into phytoplankton dynamics and their potential ecological implications.
+
+*Chlorophyll Concentration Among Microorganisms*
+
+The lack of significant differences in chlorophyll concentration across the three phytoplankton groups (Figures 1 and 2) suggests a shared capacity for chlorophyll synthesis, despite differences in size, structure, and ecological roles. Notably, Picoeukaryotes displayed a broader range of concentrations with some outliers. These findings align with prior studies suggesting that picoeukaryotes, while less abundant overall, may exhibit more variable chlorophyll content due to their adaptability to diverse environmental conditions and efficient photosynthetic processes.
+
+*Seasonal Trends in Microorganism Density and Chlorophyll Concentration*
+
+Seasonal trends revealed distinct patterns in microorganism density and chlorophyll concentration (Figures 3 and 4). Cyanobacteria and Picoeukaryotes exhibited density peaks during spring and summer, reflecting favorable conditions such as increased light availability and nutrient upwelling. In contrast, Nanoeukaryotes maintained consistent density year-round, potentially indicating greater ecological stability or resilience to seasonal variability. Chlorophyll concentrations mirrored these patterns, reinforcing the hypothesis that microbe abundance is closely tied to chlorophyll levels. These results highlight the importance of seasonal cycles in shaping phytoplankton productivity and community structure.
+
+*Long-term Trends in Microorganism Density and Chlorophyll Concentration*
+
+Long-term analyses (Figures 5 and 6) showed considerable fluctuation in microorganism density without clear trends, suggesting the influence of complex and variable environmental factors such as temperature, nutrient availability, and competition. Similarly, chlorophyll concentrations demonstrated parallel variability across all three groups, emphasizing the interconnectedness of phytoplankton populations over time. The absence of a strong directional trend may reflect a balance between growth and loss processes in these ecosystems.
+
+*Correlation Between Chlorophyll and Picoeukaryote Density*
+
+The slightly negative correlation between chlorophyll content and Picoeukaryote density (Figure 7) raises intriguing questions about their ecological role. Despite their lower overall density compared to other groups, picoeukaryotes appear to contribute significantly to chlorophyll production. This finding supports the hypothesis that picoeukaryotes possess efficient photosynthetic mechanisms, enabling them to maintain productivity even in low-density conditions. These observations underline the diversity within phytoplankton communities and the unique contributions of different groups to primary production.
+
+*Implications and Future Directions*
+
+The findings of this study underscore the complexity of phytoplankton dynamics, shaped by interactions between density, chlorophyll concentration, and environmental factors. The seasonal and long-term trends observed here highlight the need for continued monitoring to better understand phytoplankton responses to environmental change. Future research should explore the physiological mechanisms underlying chlorophyll variability within phytoplankton groups and assess how these dynamics influence broader ecosystem productivity.By integrating seasonal, long-term, and group-specific perspectives, this study provides valuable insights into the roles of phytoplankton in marine ecosystems and their potential responses to ongoing environmental change.
+
+## References 

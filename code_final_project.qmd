@@ -1,0 +1,226 @@
+---
+title: "final_project"
+subtitle: "Olivia_Lucia"
+format: pdf
+editor: visual
+editor_options: 
+  chunk_output_type: inline
+---
+
+```{r}
+library(readr)
+phyto_data <- read_csv("OL-weeklyphyto-data.csv")
+```
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyverse)
+
+head(phyto_data)
+summary(phyto_data)
+```
+
+```{r}
+phyto_data <- phyto_data %>%
+  mutate(
+    `Chlorophyll (ug/L)` = as.numeric(`Chlorophyll (ug/L)`),
+    `Picoeukaryotes (cells/ml)` = as.numeric(`Picoeukaryotes (cells/ml)`),
+    `Nanoeukaryotes (cells/mL)` = as.numeric(`Nanoeukaryotes (cells/mL)`),
+    `Cyanobacteria (cells/mL)` = as.numeric(`Cyanobacteria (cells/mL)`)) 
+summary(phyto_data)
+```
+
+```{r}
+phyto_data_clean <- phyto_data %>%
+  filter(!is.na(`Chlorophyll (ug/L)`), !is.na(`Picoeukaryotes (cells/ml)`))
+```
+
+Is chlorophyll concentration related to the type of micro-organism?
+
+```{r}
+phyto_data_clean <- phyto_data_clean %>%
+  mutate(Date = as.Date(paste(Year, Month, "01", sep = "-"), format = "%Y-%m-%d"))
+```
+
+```{r, fig.cap= "Boxplot comparing chlorophyll concentration across different microorganism types (Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes) measured in cells/mL. Points outside the boxplot represent outliers."}
+data_long <- phyto_data_clean %>%
+  select(Date, `Chlorophyll (ug/L)`, `Picoeukaryotes (cells/ml)`, `Nanoeukaryotes (cells/mL)`, `Cyanobacteria (cells/mL)`, Location) %>%
+  pivot_longer(
+    cols = c(`Picoeukaryotes (cells/ml)`, `Nanoeukaryotes (cells/mL)`, `Cyanobacteria (cells/mL)`), 
+    names_to = "Micro_organism_type", 
+    values_to = "Concentration"
+  )
+#create the boxplot
+ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, fill = Micro_organism_type)) +
+  geom_boxplot() +
+  labs(title = "Chlorophyll Concentration by Microorganism Type",
+       x = "Microorganism Type",
+       y = "Chlorophyll Concentration", fill = "Microorganism Type") +
+  theme_minimal() +
+  scale_fill_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
+                               "Nanoeukaryotes (cells/mL)" = "green", 
+                               "Cyanobacteria (cells/mL)" = "orange"))
+```
+
+same figure with jitter
+
+```{r, fig.cap="Boxplot illustrating chlorophyll concentration (µg/L) for different microorganism types: Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes, measured in cells/mL. Each point represents an individual measurement, highlighting the potential variability and outliers in chlorophyll concentration among the three microorganism groups."}
+# Scatter plot with linear trend lines for each microorganism type
+ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, color = Micro_organism_type)) +
+  geom_jitter() +  # Adds jitter to spread points out horizontally
+  geom_boxplot() +  # Adds a boxplot overlay for distribution view
+  labs(title = "Chlorophyll Concentration by Micro-organism Type",
+       x = "Micro-organism Type", y = "Chlorophyll (ug/L)", color = "Microorganism Type") +
+  theme_minimal() +
+  scale_color_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
+                                "Nanoeukaryotes (cells/mL)" = "green", 
+                                "Cyanobacteria (cells/mL)" = "orange"))
+```
+
+```{r}
+data_long <- data_long %>%
+  mutate(Date = as.Date(Date, format = "%Y-%m-%d"))
+library(lubridate)
+
+data_long <- data_long %>%
+  mutate(
+    Year = year(Date),
+    Month = month(Date)
+  )
+data_long <- data_long %>% 
+  mutate(
+    Month = case_when(
+      Month %in% c(1) ~ "Jan",
+      Month %in% c(2) ~ "Feb",
+      Month %in% c(3) ~ "Mar",
+      Month %in% c(4) ~ "Apr",
+      Month %in% c(5) ~ "May",
+      Month %in% c(6) ~ "Jun",
+      Month %in% c(7) ~ "Jul",
+      Month %in% c(8) ~ "Aug",
+      Month %in% c(9) ~ "Sep",
+      Month %in% c(10) ~ "Oct",
+      Month %in% c(11) ~ "Nov",
+      Month %in% c(12) ~ "Dec")) 
+```
+
+```{r}
+seasonal_data <- data_long %>%
+  group_by(Year, Month,Date, Micro_organism_type) %>%
+  summarize(Average_Concentration = mean(Concentration)) 
+
+seasonal_data <- seasonal_data %>%
+  mutate(
+    Date = as.Date(Date),  # Ensure Date is in Date format
+    Year = year(Date),
+    Month = month(Date),
+    Season = case_when(
+      Month %in% c(12, 1, 2) ~ "Winter",
+      Month %in% c(3, 4, 5) ~ "Spring",
+      Month %in% c(6, 7, 8) ~ "Summer",
+      Month %in% c(9, 10, 11) ~ "Fall"
+    )
+  )
+```
+
+figure of microorganisms concentration over the 4 year period faceted by season
+
+```{r, fig.cap="Line plots showing the seasonal trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Micro_organism_type)) +
+  geom_point() +                      
+  geom_line(aes(group = Micro_organism_type)) + # Connect points with lines
+  facet_wrap(~ Season, scales = "free_y") +   # Facet by Season
+  labs(
+    title = "Microorganism Density Over Time by Season",
+    x = "Year",
+    y = "Microorganism Density (cells/mL)",
+    color = "Microorganism Type"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+```
+
+also look at chloropyll concentration over time by season
+
+```{r}
+seasonal_data2 <- data_long %>%
+  group_by(Year, Month,Date, `Chlorophyll (ug/L)`, Micro_organism_type, Location) %>%
+  summarize(avg_chloropyll = mean(`Chlorophyll (ug/L)`)) 
+
+seasonal_data2 <- seasonal_data2 %>%
+  mutate(
+    Date = as.Date(Date),  # Ensure Date is in Date format
+    Year = year(Date),
+    Month = month(Date),
+    Season = case_when(
+      Month %in% c(12, 1, 2) ~ "Winter",
+      Month %in% c(3, 4, 5) ~ "Spring",
+      Month %in% c(6, 7, 8) ~ "Summer",
+      Month %in% c(9, 10, 11) ~ "Fall"
+    )
+  )
+```
+
+```{r, fig.cap="Boxplots showing the seasonal trends in chloropyll concentration(ug/mL) over time from 2020 to 2024 for. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+ggplot(seasonal_data2, aes(x = as.factor(Year), y = avg_chloropyll)) + # Convert Year to a factor for categorical plotting
+  geom_boxplot() + # Use boxplot instead of points and lines
+  facet_wrap(~ Season, scales = "free_y") + # Facet by Season
+  labs(
+    title = "Chlorophyll Concentrations Over Time by Season",
+    x = "Year",
+    y = "Concentration (µg/mL)"
+  ) +
+  theme_minimal() +
+  theme(
+    text = element_text(size = 12),
+    panel.grid.minor = element_blank()
+  )
+```
+
+figure faceted by month looking at microorganisms concentrations over the 4 year period
+
+faceted by mircoorganisms type and looking at the density of
+
+```{r, fig.cap="Line plots showing the trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Month)) +
+  geom_line() +
+  facet_wrap(~Micro_organism_type, scales = "free_y") +
+  labs(title = "Variations in Phytoplankton Density by Microorganism Type Over time",
+       x = "Year",
+       y = "Average Phytoplankton Density") +
+  theme_minimal()
+```
+
+do this for chlorophyll instead of density too
+
+```{r, fig.cap="Line plots showing the trends in chlorophyll concentration (ug/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+ggplot(seasonal_data2, aes(x = Year, y = avg_chloropyll, color = Month)) +
+  geom_line() +
+  facet_wrap(~Micro_organism_type, scales = "free_y") +
+  labs(title = "Variations in Chlorophyll Concentration by Microorganism Type Over time",
+       x = "Year",
+       y = "Average Chlorophyll concentration") +
+  theme_minimal()
+```
+
+look at chlorphyll concnetration over the 4 year period by location
+
+Linear regression between chlorophyll and picoeukaryotes
+
+```{r, fig.cap="Relationship between chlorophyll concentration and picoeukaryotes density, including best fit line."}
+lm_model <- lm(`Chlorophyll (ug/L)` ~ `Picoeukaryotes (cells/ml)`, data = phyto_data_clean)
+summary(lm_model)
+
+# Plot with regression line
+ggplot(phyto_data_clean, aes(x = `Picoeukaryotes (cells/ml)`, y = `Chlorophyll (ug/L)`)) +
+  geom_point() +
+  geom_smooth(method = "lm", col = "blue") +
+  labs(title = "Chlorophyll vs. Picoeukaryotes", x = "Picoeukaryotes (cells/ml)", y = "Chlorophyll (ug/L)")
+
+```
+
+
