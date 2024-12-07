@@ -1,8 +1,8 @@
 ---
-title: "Final Assignment Analysis: A multi-year time series of phytoplankton community structure at various marine laboratories at University of New Hampshire"
+title: "Multi-Year Analysis of Phytoplankton Community Structure Across UNH Marine Laboratories"
 author: "Olivia Lucia"
 date: "December 6, 2024"
-output: pdf_document
+format: pdf
 pdf-engine: xelatex  # Or "lualatex"
 mainfont: "Times New Roman"
 ---
@@ -72,7 +72,7 @@ Temporal variations in phytoplankton density were analyzed by aggregating data b
 
 ## Results and Analysis
 
-```{r, echo=FALSE, fig.cap= "Figure 1: Boxplot comparing chlorophyll concentration across different microorganism types (Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes) measured in cells/mL. Points outside the boxplot represent outliers."}
+```{r, echo=FALSE, fig.cap= "Boxplot comparing chlorophyll concentration across different microorganism types (Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes) measured in cells/mL. Points outside the boxplot represent outliers."}
 data_long <- phyto_data_clean %>%
   select(Date, `Chlorophyll (ug/L)`, `Picoeukaryotes (cells/ml)`, `Nanoeukaryotes (cells/mL)`, `Cyanobacteria (cells/mL)`, Location) %>%
   pivot_longer(
@@ -83,16 +83,26 @@ data_long <- phyto_data_clean %>%
 #create the boxplot
 ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, fill = Micro_organism_type)) +
   geom_boxplot() +
-  labs(title = "Chlorophyll Concentration by Microorganism Type",
-       x = "Microorganism Type",
-       y = "Chlorophyll (ug/L)", fill = "Microorganism Type") +
+  labs(
+    title = "Chlorophyll Concentration by Microorganism Type",
+    x = "Microorganism Type",
+    y = "Chlorophyll (ug/L)", 
+    fill = "Microorganism Type"
+  ) +
   theme_minimal() +
-  scale_fill_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
-                               "Nanoeukaryotes (cells/mL)" = "green", 
-                               "Cyanobacteria (cells/mL)" = "orange"))
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis text for readability
+  ) +
+  scale_fill_manual(
+    values = c(
+      "Picoeukaryotes (cells/ml)" = "blue", 
+      "Nanoeukaryotes (cells/mL)" = "green", 
+      "Cyanobacteria (cells/mL)" = "orange"
+    )
+  )
 ```
 
-```{r jitter, echo=FALSE, fig.cap="Figure 2: Boxplot illustrating chlorophyll concentration (µg/L) for different microorganism types: Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes, measured in cells/mL. Each point represents an individual measurement, highlighting the potential variability and outliers in chlorophyll concentration among the three microorganism groups."}
+```{r jitter, echo=FALSE, fig.cap="Boxplot illustrating chlorophyll concentration (µg/L) for different microorganism types: Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes, measured in cells/mL. Each point represents an individual measurement, highlighting the potential variability and outliers in chlorophyll concentration among the three microorganism groups."}
 # Scatter plot with linear trend lines for each microorganism type
 ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, color = Micro_organism_type)) +
   geom_jitter() +  # Adds jitter to spread points out horizontally
@@ -100,6 +110,9 @@ ggplot(data_long, aes(x = Micro_organism_type, y = `Chlorophyll (ug/L)`, color =
   labs(title = "Chlorophyll Concentration by Micro-organism Type",
        x = "Micro-organism Type", y = "Chlorophyll (ug/L)", color = "Microorganism Type") +
   theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1) # Rotate x-axis text for readability
+  ) +
   scale_color_manual(values = c("Picoeukaryotes (cells/ml)" = "blue", 
                                 "Nanoeukaryotes (cells/mL)" = "green", 
                                 "Cyanobacteria (cells/mL)" = "orange"))
@@ -154,7 +167,7 @@ seasonal_data <- seasonal_data %>%
 ```
 
 
-```{r line plot, echo=FALSE, fig.cap="Figure 3: Line plots showing the seasonal trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+```{r line plot, echo=FALSE, fig.cap="Line plots showing the seasonal trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
 
 ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Micro_organism_type)) +
   geom_point() +                      
@@ -169,6 +182,7 @@ ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Micro_org
   theme_minimal() +
   theme(
     text = element_text(size = 12),
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels
     panel.grid.minor = element_blank()
   )
 ```
@@ -194,7 +208,7 @@ seasonal_data2 <- seasonal_data2 %>%
   )
 ```
 
-```{r boxplot, echo=FALSE, fig.cap="Figure 4: Boxplots showing the seasonal trends in chloropyll concentration(ug/mL) over time from 2020 to 2024 for. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
+```{r boxplot, echo=FALSE, fig.cap="Boxplots showing the seasonal trends in chloropyll concentration(ug/mL) over time from 2020 to 2024 for. Each panel represents a different season (Fall, Spring, Summer, and Winter)."}
 ggplot(seasonal_data2, aes(x = as.factor(Year), y = avg_chloropyll)) + # Convert Year to a factor for categorical plotting
   geom_boxplot() + # Use boxplot instead of points and lines
   facet_wrap(~ Season, scales = "free_y") + # Facet by Season
@@ -214,31 +228,49 @@ ggplot(seasonal_data2, aes(x = as.factor(Year), y = avg_chloropyll)) + # Convert
 
 Seasonal line plot (Figures 3) and boxplot (Figure 4) showed unique patterns across time. Microorganism density varied seasonally, with Cyanobacteria and Picoeukaryotes peaking in the spring and summer, whereas Nanoeukaryotes remained more steady throughout the year. Chlorophyll concentrations paralleled similar patterns, indicating a possible relationship between microbe abundance and chlorophyll levels.
 
-```{r,echo=FALSE, fig.cap="Figure 5: Line plots showing the trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+```{r,echo=FALSE, fig.cap="Line plots showing the trends in microorganism density (cells/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
 ggplot(seasonal_data, aes(x = Year, y = Average_Concentration, color = Month)) +
   geom_line() +
-  facet_wrap(~Micro_organism_type, scales = "free_y") +
-  labs(title = "Variations in Phytoplankton Density by Microorganism Type Over time",
-       x = "Year",
-       y = "Average Phytoplankton Density") +
-  theme_minimal()
+  facet_wrap(
+    ~ Micro_organism_type,
+    scales = "free_y",
+    labeller = label_wrap_gen(width = 15) # Adjust the width for better wrapping
+  ) +
+  labs(
+    title = "Variations in Phytoplankton Density by Microorganism Type Over Time",
+    x = "Year",
+    y = "Average Phytoplankton Density"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels
+   )
 ```
 
-```{r,echo=FALSE, fig.cap="Figure 6: Line plots showing the trends in chlorophyll concentration (ug/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
+```{r,echo=FALSE, fig.cap="Line plots showing the trends in chlorophyll concentration (ug/mL) over time from 2020 to 2024 for Cyanobacteria, Nanoeukaryotes, and Picoeukaryotes. Each panel represents a different microorganism."}
 ggplot(seasonal_data2, aes(x = Year, y = avg_chloropyll, color = Month)) +
   geom_line() +
-  facet_wrap(~Micro_organism_type, scales = "free_y") +
-  labs(title = "Variations in Chlorophyll Concentration by Microorganism Type Over time",
-       x = "Year",
-       y = "Average Chlorophyll concentration") +
-  theme_minimal()
+  facet_wrap(
+    ~ Micro_organism_type,
+    scales = "free_y",
+    labeller = label_wrap_gen(width = 15) # Wrap long facet titles
+  ) +
+  labs(
+    title = "Variations in Chlorophyll Concentration by Microorganism Type Over Time",
+    x = "Year",
+    y = "Average Chlorophyll Concentration"
+  ) +
+  theme_minimal() +
+  theme(
+    axis.text.x = element_text(angle = 45, hjust = 1), # Rotate x-axis labels for readability
+   )
 ```
 
 *Long-term trends by microorganism Type* 
 
 Figures 5 and 6 show trends in density and chlorophyll concentration for each microbe throughout time. Figure 5 demonstrated a lot of fluctuation in microbe density, with no pattern or association. Chlorophyll concentrations followed similar trajectories, with all three microorganisms having nearly identical chlorophyll concentration tendencies, as seen in Figures 1 and 2.
 
-```{r lm, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Figure 7: Relationship between chlorophyll concentration and picoeukaryotes density, including best fit line."}
+```{r lm, echo=FALSE, warning=FALSE, message=FALSE, fig.cap="Relationship between chlorophyll concentration and picoeukaryotes density, including best fit line."} 
 # Create the linear model
 lm_model <- lm(`Chlorophyll (ug/L)` ~ `Picoeukaryotes (cells/ml)`, data = phyto_data_clean)
 
@@ -318,4 +350,4 @@ Polimene, L., Sailley, S., Clark, D., Mitra, A., & Allen, J. I. (2017). Biologic
 
 Pomeroy, L. R., Paffenhöfer, G. A., & Yoder, J. A. (1987). Interactions of phytoplankton, zooplankton and microorganisms. Progress in Oceanography, 19 (3-4), 353-372.  
 
-Riemann, B., Simonsen, P., & Stensgaard, L. (1989). The carbon and chlorophyll content of phytoplankton from various nutrient regimes. Journal of Plankton Research, 11 (5), 1037-1045.  
+Riemann, B., Simonsen, P., & Stensgaard, L. (1989). The carbon and chlorophyll content of phytoplankton from various nutrient regimes. Journal of Plankton Research, 11 (5), 1037-1045. 
